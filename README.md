@@ -1,6 +1,3 @@
-# encryption-notepad
-A simple notepad application that reads and writes encrypted files, written in Python with PyQt6, PyCryptodome, and Cryptography
-
 ## Encrypted Notepad Application
 #### Author: Ellie Day
 #### Date: June 19th 2022
