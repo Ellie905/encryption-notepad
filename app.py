@@ -14,23 +14,20 @@
 # Docs: https://www.riverbankcomputing.com/static/Docs/PyQt6/index.html
 
 
-
 # ---- TO-DO (in the future) ----
 # Exit Code 250 - Replace with QMessageBox informing user they have the incorrect encryption key, then run close_file()
 # Removed Fixed x, y coords of window geometry in MainWindow.__init__() (Percentage instead of Fixed)
 
 
-
-# Most of the following code initially was borrowed from https://github.com/pyqt/examples/tree/_/src/07%20Qt%20Text%20Editor
+# Most of the following code initially was borrowed from
+# https://github.com/pyqt/examples/tree/_/src/07%20Qt%20Text%20Editor
 
 import sys  # Used to Exit Application (sys.exit())
 import base64  # Fernet Encryption Key requires base64 encoded byte
 import cryptography  # Imported full library for InvalidToken Exception Handling below (inside decrypt_file())
-import ntpath # NTPath and Signal added to give window dynamic features
-import signal
+import ntpath  # NTPath added to give window dynamic features
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QKeySequence, QAction
-from PyQt6.QtCore import *
 from Crypto.Hash import SHA256  # Used to hash files to get encryption key
 from cryptography.fernet import Fernet
 
@@ -53,9 +50,9 @@ class MainWindow(QMainWindow):
         dlg = Dialog(self)
         answer = dlg.exec()
 
-        if answer == 0: # Cancel
+        if answer == 0:  # Cancel
             e.ignore()
-        elif answer == 1: # Save
+        elif answer == 1:  # Save
             save()
             if text.document().isModified():
                 # This happens when the user closes the Save As... dialog.
@@ -69,6 +66,7 @@ class MainWindow(QMainWindow):
         if window.windowTitle().__contains__('*'):
             return
         window.setWindowTitle(window.windowTitle() + ' *')
+
 
 class Dialog(QDialog):
     def __init__(self, parent=MainWindow):
@@ -95,6 +93,7 @@ class Dialog(QDialog):
     def discard(self):
         app.exit(0)
 
+
 # Rather than close application, this Dialog closes the file so user can create a new document
 class CloseDialog(Dialog):
     def __init__(self, parent=MainWindow):
@@ -113,8 +112,8 @@ text = QPlainTextEdit()
 window = MainWindow()
 window.setCentralWidget(text)
 
-file_path = None
-encryption_key: str = None
+file_path: str = ''
+encryption_key: str = ''
 
 
 def get_file_name(path):
@@ -139,7 +138,7 @@ def get_encryption_key():
     except FileNotFoundError:
         # user selected new encryption key, opened QFileDialog, but closed it without picking new file
         # old file is reused
-        if not encryption_key == None:
+        if encryption_key is not None:
             return
 
         # exit application if user doesn't select file to hash for encryption key - Exit Code #30
@@ -193,13 +192,17 @@ def open_file():
     path = QFileDialog.getOpenFileName(window, "Open")[0]
 
     # Decrypting
-    with open(path, 'r') as file:
-        plaintext = decrypt_file(file.read())
+    try:
+        with open(path, 'r') as file:
+            plaintext = decrypt_file(file.read())
+    except FileNotFoundError:
+        return
 
     text.setPlainText(plaintext)
     file_path = path
 
     window.setWindowTitle(get_file_name(path))
+
 
 # Pre-written function, modified to encrypt files upon saving
 def save():
@@ -220,6 +223,9 @@ def save():
         text.document().setModified(False)
 
         window.setWindowTitle(str(window.windowTitle()).rstrip(' *'))
+
+        if window.windowTitle() == 'Untitled Document':
+            window.setWindowTitle(get_file_name(file_path))
 
 
 # Pre-written function, unmodified
@@ -267,7 +273,6 @@ fileMenu.addAction(close)
 new_key_action = QAction("Select New Encryption &Key")
 new_key_action.triggered.connect(get_encryption_key)
 toolsMenu.addAction(new_key_action)
-
 
 # --- Execution ---
 
