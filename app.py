@@ -206,23 +206,22 @@ def open_file():
 
 # Pre-written function, modified to encrypt files upon saving
 def save():
-    if file_path is None:
+    try:
+        with open(file_path, "w") as f:
+            key = base64.b64encode(str.encode(encryption_key))
+            plaintext = text.toPlainText()
+            payload = str.encode(plaintext, 'utf-8')
+
+            fer = Fernet(key)
+            token = fer.encrypt(payload)
+
+            f.write(bytes.decode(token))
+
+        text.document().setModified(False)
+
+        window.setWindowTitle(str(window.windowTitle()).rstrip(' *'))
+    except FileNotFoundError:
         save_as()
-
-    # Encrypting
-    with open(file_path, "w") as f:
-        key = base64.b64encode(str.encode(encryption_key))
-        plaintext = text.toPlainText()
-        payload = str.encode(plaintext, 'utf-8')
-
-        fer = Fernet(key)
-        token = fer.encrypt(payload)
-
-        f.write(bytes.decode(token))
-
-    text.document().setModified(False)
-
-    window.setWindowTitle(str(window.windowTitle()).rstrip(' *'))
 
     if window.windowTitle() == 'Untitled Document':
         window.setWindowTitle(get_file_name(file_path))
