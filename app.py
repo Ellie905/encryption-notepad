@@ -25,7 +25,7 @@
 import sys  # Used to Exit Application (sys.exit())
 import base64  # Fernet Encryption Key requires base64 encoded byte
 import cryptography  # Imported full library for InvalidToken Exception Handling below (inside decrypt_file())
-import ntpath  # NTPath added to give window dynamic features
+import os  # os added to give window dynamic features
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QKeySequence, QAction
 from Crypto.Hash import SHA256  # Used to hash files to get encryption key
@@ -117,8 +117,8 @@ encryption_key: str = ''
 
 
 def get_file_name(path):
-    head, tail = ntpath.split(path)
-    return tail or ntpath.basename(head)
+    head, tail = os.path.split(path)
+    return tail or os.path.basename(head)
 
 
 def hash_key_file(file):
@@ -208,24 +208,24 @@ def open_file():
 def save():
     if file_path is None:
         save_as()
-    else:
-        # Encrypting
-        with open(file_path, "w") as f:
-            key = base64.b64encode(str.encode(encryption_key))
-            plaintext = text.toPlainText()
-            payload = str.encode(plaintext, 'utf-8')
 
-            fer = Fernet(key)
-            token = fer.encrypt(payload)
+    # Encrypting
+    with open(file_path, "w") as f:
+        key = base64.b64encode(str.encode(encryption_key))
+        plaintext = text.toPlainText()
+        payload = str.encode(plaintext, 'utf-8')
 
-            f.write(bytes.decode(token))
+        fer = Fernet(key)
+        token = fer.encrypt(payload)
 
-        text.document().setModified(False)
+        f.write(bytes.decode(token))
 
-        window.setWindowTitle(str(window.windowTitle()).rstrip(' *'))
+    text.document().setModified(False)
 
-        if window.windowTitle() == 'Untitled Document':
-            window.setWindowTitle(get_file_name(file_path))
+    window.setWindowTitle(str(window.windowTitle()).rstrip(' *'))
+
+    if window.windowTitle() == 'Untitled Document':
+        window.setWindowTitle(get_file_name(file_path))
 
 
 # Pre-written function, unmodified
