@@ -15,7 +15,6 @@
 
 
 # ---- TO-DO (in the future) ----
-# Exit Code 250 - Replace with QMessageBox informing user they have the incorrect encryption key, then run close_file()
 # Removed Fixed x, y coords of window geometry in MainWindow.__init__() (Percentage instead of Fixed)
 
 
@@ -66,6 +65,14 @@ class MainWindow(QMainWindow):
         if window.windowTitle().__contains__('*'):
             return
         window.setWindowTitle(window.windowTitle() + ' *')
+
+
+class MessageBox(QMessageBox):
+    def __init__(self, title: str, msgtext: str, parent=MainWindow):
+        super().__init__()
+
+        self.setWindowTitle(title)
+        self.setText(msgtext)
 
 
 class Dialog(QDialog):
@@ -149,22 +156,17 @@ def get_encryption_key():
 
 
 def decrypt_file(file):
-    try:
-        # file is passed from open_file(), file is the raw text from the text file in a str object
-        payload = str.encode(file)
+    # file is passed from open_file(), file is the raw text from the text file in a str object
+    payload = str.encode(file)
 
-        # decrypt data
-        key = base64.b64encode(str.encode(encryption_key))
-        fer = Fernet(key)
-        token = fer.decrypt(payload)
+    # decrypt data
+    key = base64.b64encode(str.encode(encryption_key))
+    fer = Fernet(key)
+    token = fer.decrypt(payload)
 
-        # returns str object of decrypted data, no padding
-        plaintext = bytes.decode(token)
-        return plaintext
-    except cryptography.fernet.InvalidToken:
-        # Exit application if user selected incorrect file to hash for encryption key, thus user received incorrect key
-        # Exit Code #250
-        sys.exit(250)
+    # returns str object of decrypted data, no padding
+    plaintext = bytes.decode(token)
+    return plaintext
 
 
 def close_file():
@@ -195,6 +197,12 @@ def open_file():
     try:
         with open(path, 'r') as file:
             plaintext = decrypt_file(file.read())
+    except cryptography.fernet.InvalidToken:
+        # formerly exit code #250
+        msg = MessageBox("Warning!", "The document you are trying to open is not compatible with the encryption key "
+                                     "you have selected. Please select a new encryption key to try again.")
+        msg.exec()
+        return
     except FileNotFoundError:
         return
 
